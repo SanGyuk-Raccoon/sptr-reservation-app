@@ -1,11 +1,21 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import './LoginPage.css'
+
+// 인앱 브라우저 감지
+function isInAppBrowser(): boolean {
+  const ua = navigator.userAgent || navigator.vendor
+  // 카카오톡, 인스타그램, 페이스북, 라인, 네이버 등 인앱 브라우저 감지
+  return /KAKAOTALK|Instagram|FBAN|FBAV|Line|NAVER/i.test(ua)
+}
 
 export function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { signInWithGoogle } = useAuth()
+
+  const isInApp = useMemo(() => isInAppBrowser(), [])
+  const currentUrl = window.location.href
 
   const handleGoogleLogin = async () => {
     setLoading(true)
@@ -19,13 +29,28 @@ export function LoginPage() {
     }
   }
 
+  const handleCopyUrl = () => {
+    navigator.clipboard.writeText(currentUrl)
+    alert('URL이 복사되었습니다. 브라우저에서 붙여넣기 하세요.')
+  }
+
   return (
     <div className="login-page">
       <div className="login-container">
         <div className="login-header">
-          <h1>📅 일정 예약 시스템</h1>
+          <h1>밴드 연습실 예약</h1>
           <p>예약을 관리하려면 로그인하세요</p>
         </div>
+
+        {isInApp && (
+          <div className="inapp-warning">
+            <p><strong>인앱 브라우저에서는 Google 로그인이 제한됩니다.</strong></p>
+            <p>Safari 또는 Chrome에서 열어주세요.</p>
+            <button onClick={handleCopyUrl} className="copy-url-button">
+              URL 복사하기
+            </button>
+          </div>
+        )}
 
         {error && (
           <div className="login-error">
@@ -36,7 +61,7 @@ export function LoginPage() {
         <button
           className="google-login-button"
           onClick={handleGoogleLogin}
-          disabled={loading}
+          disabled={loading || isInApp}
         >
           <svg className="google-icon" viewBox="0 0 24 24">
             <path

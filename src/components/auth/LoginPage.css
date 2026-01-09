@@ -38,6 +38,40 @@
   font-size: 0.9rem;
 }
 
+.inapp-warning {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.inapp-warning p {
+  margin: 0 0 8px 0;
+}
+
+.inapp-warning p:last-of-type {
+  margin-bottom: 12px;
+}
+
+.copy-url-button {
+  background: #f59e0b;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.copy-url-button:hover {
+  background: #d97706;
+}
+
 .google-login-button {
   display: flex;
   align-items: center;
