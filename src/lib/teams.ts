@@ -167,8 +167,20 @@ export async function updateTeam(teamId: string, updates: Partial<Pick<Team, 'na
   return data
 }
 
-// 팀 삭제 (관리자)
+// 팀 삭제 (관리자) - 해당 팀의 예약도 함께 삭제
 export async function deleteTeam(teamId: string): Promise<void> {
+  // 먼저 해당 팀의 예약 삭제
+  const { error: appointmentsError } = await supabase
+    .from('appointments')
+    .delete()
+    .eq('team_id', teamId)
+
+  if (appointmentsError) {
+    console.error('팀 예약 삭제 실패:', appointmentsError)
+    throw appointmentsError
+  }
+
+  // 팀 삭제
   const { error } = await supabase
     .from('teams')
     .delete()
