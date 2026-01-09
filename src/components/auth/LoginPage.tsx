@@ -13,10 +13,11 @@ function getInAppBrowserType(): string | null {
   return null
 }
 
-// 외부 브라우저로 열기
+// 외부 브라우저로 열기 (브라우저 선택 가능)
 function openInExternalBrowser(url: string, browserType: string | null): boolean {
   try {
     if (browserType === 'kakaotalk') {
+      // 카카오톡: 기본 브라우저로 열기 (사용자가 기기에서 설정한 브라우저)
       window.location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url)
       return true
     }
@@ -25,11 +26,9 @@ function openInExternalBrowser(url: string, browserType: string | null): boolean
       return true
     }
     if (browserType === 'facebook' || browserType === 'instagram') {
-      // FB/IG는 직접 열기가 제한적이므로 false 반환
       return false
     }
     if (browserType === 'naver') {
-      // 네이버 앱은 naversearchapp 스킴 사용
       window.location.href = 'naversearchapp://openExternal?url=' + encodeURIComponent(url)
       return true
     }
