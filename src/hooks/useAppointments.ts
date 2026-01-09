@@ -7,6 +7,8 @@ import {
   type Appointment,
   type CreateAppointmentData
 } from '../lib/appointments'
+import { WEEKDAY_SLOTS, type WeekdaySlotId } from '../types/calendar'
+import { isWeekday, isSlotId } from '../utils/dateUtils'
 
 interface UseAppointmentsResult {
   appointments: Appointment[]
@@ -16,6 +18,7 @@ interface UseAppointmentsResult {
   addAppointment: (data: CreateAppointmentData) => Promise<void>
   removeAppointment: (id: string) => Promise<void>
   getAppointmentsForDate: (date: Date) => Appointment[]
+  getAvailableSlotsForDate: (date: Date) => WeekdaySlotId[]
 }
 
 export function useAppointments(): UseAppointmentsResult {
@@ -91,6 +94,28 @@ export function useAppointments(): UseAppointmentsResult {
     })
   }, [appointments])
 
+  const getAvailableSlotsForDate = useCallback((date: Date): WeekdaySlotId[] => {
+    // 주말이면 빈 배열 반환 (슬롯 시스템 사용 안함)
+    if (!isWeekday(date)) {
+      return []
+    }
+
+    // 해당 날짜의 예약 목록 조회
+    const dateAppointments = getAppointmentsForDate(date)
+
+    // 이미 예약된 슬롯 ID 추출
+    const bookedSlots = new Set(
+      dateAppointments
+        .map(apt => apt.time)
+        .filter(isSlotId)
+    )
+
+    // 예약되지 않은 슬롯만 반환
+    return WEEKDAY_SLOTS
+      .map(slot => slot.id)
+      .filter(slotId => !bookedSlots.has(slotId))
+  }, [getAppointmentsForDate])
+
   return {
     appointments,
     loading,
@@ -98,6 +123,7 @@ export function useAppointments(): UseAppointmentsResult {
     refresh,
     addAppointment,
     removeAppointment,
-    getAppointmentsForDate
+    getAppointmentsForDate,
+    getAvailableSlotsForDate
   }
 }

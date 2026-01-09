@@ -1,17 +1,24 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import './App.css'
 
-import type { CalendarValue, AppointmentFormData } from './types/calendar'
+import type { CalendarValue, AppointmentFormData, WeekdaySlotId } from './types/calendar'
+import type { Team } from './types/team'
+import { WEEKDAY_SLOTS } from './types/calendar'
 import { useAvailableDates, useToday, useAppointments } from './hooks'
+import { isWeekday } from './utils/dateUtils'
+import { getMyLeaderTeams } from './lib/teams'
 import { AppHeader, AppointmentForm, AppointmentList } from './components'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { AuthGuard, AdminGuard } from './components/auth'
+import { AdminPage } from './components/admin'
 
 function AppContent() {
   const [selectedDate, setSelectedDate] = useState<CalendarValue>(new Date())
   const [showForm, setShowForm] = useState(false)
+  const [showAdminPage, setShowAdminPage] = useState(false)
+  const [leaderTeams, setLeaderTeams] = useState<Team[]>([])
 
   const { user, profile, isAdmin, signOut } = useAuth()
   const today = useToday()
@@ -22,8 +29,16 @@ function AppContent() {
     refresh,
     addAppointment,
     removeAppointment,
-    getAppointmentsForDate
+    getAppointmentsForDate,
+    getAvailableSlotsForDate
   } = useAppointments()
+
+  // 내가 팀장인 팀 목록 로드
+  useEffect(() => {
+    if (user) {
+      getMyLeaderTeams(user.id).then(setLeaderTeams)
+    }
+  }, [user])
 
   const isDateAvailable = (date: Date) => {
     const checkDate = new Date(date)
@@ -59,6 +74,9 @@ function AppContent() {
       return
     }
 
+    // 팀 이름 찾기
+    const selectedTeam = leaderTeams.find(t => t.id === formData.team_id)
+
     try {
       await addAppointment({
         date: date,
@@ -66,7 +84,9 @@ function AppContent() {
         time: formData.time,
         description: formData.description,
         user_id: user.id,
-        user_name: profile?.name || user.email || '알 수 없음'
+        user_name: profile?.name || user.email || '알 수 없음',
+        team_id: formData.team_id,
+        team_name: selectedTeam?.name || null
       })
       setShowForm(false)
     } catch {
@@ -100,6 +120,13 @@ function AppContent() {
   const dayAppointments = selectedDateObj ? getAppointmentsForDate(selectedDateObj) : []
   const canAddAppointment = selectedDateObj && !isPastDate(selectedDateObj) && isDateAvailable(selectedDateObj)
 
+  // 선택된 날짜의 예약된 슬롯 계산 (평일용)
+  const bookedSlots: WeekdaySlotId[] = selectedDateObj && isWeekday(selectedDateObj)
+    ? WEEKDAY_SLOTS
+        .map(slot => slot.id)
+        .filter(slotId => !getAvailableSlotsForDate(selectedDateObj).includes(slotId))
+    : []
+
   const handleShowForm = () => {
     if (!selectedDateObj) return
 
@@ -114,6 +141,19 @@ function AppContent() {
     }
 
     setShowForm(true)
+  }
+
+  // 관리자 페이지에서 돌아올 때 팀 목록 새로고침
+  const handleCloseAdminPage = () => {
+    setShowAdminPage(false)
+    if (user) {
+      getMyLeaderTeams(user.id).then(setLeaderTeams)
+    }
+  }
+
+  // 관리자 페이지 표시
+  if (showAdminPage) {
+    return <AdminPage onClose={handleCloseAdminPage} />
   }
 
   return (
@@ -135,9 +175,16 @@ function AppContent() {
             <span className="admin-badge">관리자</span>
           </AdminGuard>
         </div>
-        <button onClick={handleSignOut} className="logout-button">
-          로그아웃
-        </button>
+        <div className="header-buttons">
+          <AdminGuard>
+            <button onClick={() => setShowAdminPage(true)} className="admin-button">
+              팀 관리
+            </button>
+          </AdminGuard>
+          <button onClick={handleSignOut} className="logout-button">
+            로그아웃
+          </button>
+        </div>
       </div>
 
       <AppHeader
@@ -194,8 +241,11 @@ function AppContent() {
               >
                 + 일정 추가하기
               </button>
-            ) : (
+            ) : selectedDateObj && (
               <AppointmentForm
+                selectedDate={selectedDateObj}
+                bookedSlots={bookedSlots}
+                leaderTeams={leaderTeams}
                 onSubmit={handleAddAppointment}
                 onCancel={() => setShowForm(false)}
               />
