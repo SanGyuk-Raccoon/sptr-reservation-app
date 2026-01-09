@@ -56,20 +56,21 @@
   margin-bottom: 12px;
 }
 
-.copy-url-button {
-  background: #f59e0b;
+.open-browser-button {
+  background: #5B6EF7;
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
+  width: 100%;
 }
 
-.copy-url-button:hover {
-  background: #d97706;
+.open-browser-button:hover {
+  background: #4A5BD6;
 }
 
 .google-login-button {

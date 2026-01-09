@@ -1,21 +1,63 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import './LoginPage.css'
 
-// 인앱 브라우저 감지
-function isInAppBrowser(): boolean {
+// 인앱 브라우저 타입 감지
+function getInAppBrowserType(): string | null {
   const ua = navigator.userAgent || navigator.vendor
-  // 카카오톡, 인스타그램, 페이스북, 라인, 네이버 등 인앱 브라우저 감지
-  return /KAKAOTALK|Instagram|FBAN|FBAV|Line|NAVER/i.test(ua)
+  if (/KAKAOTALK/i.test(ua)) return 'kakaotalk'
+  if (/Instagram/i.test(ua)) return 'instagram'
+  if (/FBAN|FBAV/i.test(ua)) return 'facebook'
+  if (/Line\//i.test(ua)) return 'line'
+  if (/NAVER/i.test(ua)) return 'naver'
+  return null
+}
+
+// 외부 브라우저로 열기
+function openInExternalBrowser(url: string, browserType: string | null): boolean {
+  try {
+    if (browserType === 'kakaotalk') {
+      window.location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url)
+      return true
+    }
+    if (browserType === 'line') {
+      window.location.href = url + '?openExternalBrowser=1'
+      return true
+    }
+    if (browserType === 'facebook' || browserType === 'instagram') {
+      // FB/IG는 직접 열기가 제한적이므로 false 반환
+      return false
+    }
+    if (browserType === 'naver') {
+      // 네이버 앱은 naversearchapp 스킴 사용
+      window.location.href = 'naversearchapp://openExternal?url=' + encodeURIComponent(url)
+      return true
+    }
+  } catch {
+    return false
+  }
+  return false
 }
 
 export function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showManualGuide, setShowManualGuide] = useState(false)
   const { signInWithGoogle } = useAuth()
 
-  const isInApp = useMemo(() => isInAppBrowser(), [])
+  const inAppType = useMemo(() => getInAppBrowserType(), [])
+  const isInApp = inAppType !== null
   const currentUrl = window.location.href
+
+  // 인앱 브라우저면 자동으로 외부 브라우저 열기 시도
+  useEffect(() => {
+    if (isInApp) {
+      const opened = openInExternalBrowser(currentUrl, inAppType)
+      if (!opened) {
+        setShowManualGuide(true)
+      }
+    }
+  }, [isInApp, inAppType, currentUrl])
 
   const handleGoogleLogin = async () => {
     setLoading(true)
@@ -29,9 +71,12 @@ export function LoginPage() {
     }
   }
 
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(currentUrl)
-    alert('URL이 복사되었습니다. 브라우저에서 붙여넣기 하세요.')
+  const handleOpenExternal = () => {
+    const opened = openInExternalBrowser(currentUrl, inAppType)
+    if (!opened) {
+      navigator.clipboard.writeText(currentUrl)
+      alert('URL이 복사되었습니다.\n브라우저 앱에서 주소창에 붙여넣기 해주세요.')
+    }
   }
 
   return (
@@ -42,12 +87,12 @@ export function LoginPage() {
           <p>예약을 관리하려면 로그인하세요</p>
         </div>
 
-        {isInApp && (
+        {isInApp && showManualGuide && (
           <div className="inapp-warning">
             <p><strong>인앱 브라우저에서는 Google 로그인이 제한됩니다.</strong></p>
-            <p>Safari 또는 Chrome에서 열어주세요.</p>
-            <button onClick={handleCopyUrl} className="copy-url-button">
-              URL 복사하기
+            <p>아래 버튼을 눌러 브라우저에서 열어주세요.</p>
+            <button onClick={handleOpenExternal} className="open-browser-button">
+              브라우저에서 열기
             </button>
           </div>
         )}
