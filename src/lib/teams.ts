@@ -41,23 +41,36 @@ export async function getTeamWithDetails(teamId: string): Promise<TeamWithDetail
     leader = leaderData
   }
 
-  // 팀 멤버 조회 (프로필 포함)
-  const { data: members, error: membersError } = await supabase
+  // 팀 멤버 조회
+  const { data: membersData, error: membersError } = await supabase
     .from('team_members')
-    .select(`
-      *,
-      profile:profiles(*)
-    `)
+    .select('*')
     .eq('team_id', teamId)
 
   if (membersError) {
     console.error('팀 멤버 조회 실패:', membersError)
   }
 
+  // 멤버들의 프로필 별도 조회
+  let members: TeamMember[] = []
+  if (membersData && membersData.length > 0) {
+    const userIds = membersData.map(m => m.user_id)
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', userIds)
+
+    // 멤버 데이터와 프로필 병합
+    members = membersData.map(member => ({
+      ...member,
+      profile: profilesData?.find(p => p.id === member.user_id) || null
+    }))
+  }
+
   return {
     ...team,
     leader,
-    members: members || []
+    members
   }
 }
 
@@ -88,18 +101,30 @@ export async function getTeamsWithDetails(): Promise<TeamWithDetails[]> {
     }
 
     // 팀 멤버 조회
-    const { data: members } = await supabase
+    const { data: membersData } = await supabase
       .from('team_members')
-      .select(`
-        *,
-        profile:profiles(*)
-      `)
+      .select('*')
       .eq('team_id', team.id)
+
+    // 멤버들의 프로필 별도 조회
+    let members: TeamMember[] = []
+    if (membersData && membersData.length > 0) {
+      const userIds = membersData.map(m => m.user_id)
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', userIds)
+
+      members = membersData.map(member => ({
+        ...member,
+        profile: profilesData?.find(p => p.id === member.user_id) || null
+      }))
+    }
 
     teamsWithDetails.push({
       ...team,
       leader,
-      members: members || []
+      members
     })
   }
 

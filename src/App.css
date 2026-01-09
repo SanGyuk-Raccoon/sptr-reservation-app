@@ -924,3 +924,69 @@
   background: #ccc;
   cursor: not-allowed;
 }
+
+/* 기타 시간 입력 스타일 */
+.custom-time-inputs {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f0f4ff;
+  border-radius: 8px;
+  border: 1px solid #667eea;
+}
+
+.weekend-time-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.time-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.time-input {
+  flex: 1;
+  max-width: 140px;
+}
+
+.time-select {
+  flex: 1;
+  min-width: 120px;
+  max-width: 140px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.time-select:focus {
+  border-color: #667eea;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.time-separator {
+  font-weight: 600;
+  color: #666;
+}
+
+.time-error {
+  color: #dc3545;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #fff5f5;
+  border-radius: 4px;
+  border-left: 3px solid #dc3545;
+}
+
+.time-hint {
+  color: #666;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  font-style: italic;
+}

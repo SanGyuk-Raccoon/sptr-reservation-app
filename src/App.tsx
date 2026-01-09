@@ -245,6 +245,7 @@ function AppContent() {
               <AppointmentForm
                 selectedDate={selectedDateObj}
                 bookedSlots={bookedSlots}
+                existingTimes={dayAppointments.map(a => a.time)}
                 leaderTeams={leaderTeams}
                 onSubmit={handleAddAppointment}
                 onCancel={() => setShowForm(false)}
