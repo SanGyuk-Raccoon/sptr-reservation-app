@@ -183,8 +183,13 @@
   font-weight: 500;
 }
 
-.custom-calendar .react-calendar__tile:hover {
+.custom-calendar .react-calendar__tile:hover:not(:disabled) {
   background-color: var(--gray-100);
+}
+
+.custom-calendar .react-calendar__tile:focus:not(:hover) {
+  background-color: transparent;
+  outline: none;
 }
 
 .custom-calendar .react-calendar__tile--active {
@@ -217,6 +222,11 @@
 
 .custom-calendar .react-calendar__navigation button:hover {
   background-color: var(--gray-100);
+}
+
+.custom-calendar .react-calendar__navigation button:focus:not(:hover) {
+  background-color: transparent;
+  outline: none;
 }
 
 .custom-calendar .react-calendar__month-view__weekdays {
