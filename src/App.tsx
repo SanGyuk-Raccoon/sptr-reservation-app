@@ -6,11 +6,14 @@ import './App.css'
 import type { CalendarValue, AppointmentFormData } from './types/calendar'
 import { useAvailableDates, useToday, useAppointments } from './hooks'
 import { AppHeader, AppointmentForm, AppointmentList } from './components'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { AuthGuard, AdminGuard } from './components/auth'
 
-function App() {
+function AppContent() {
   const [selectedDate, setSelectedDate] = useState<CalendarValue>(new Date())
   const [showForm, setShowForm] = useState(false)
 
+  const { user, profile, isAdmin, signOut } = useAuth()
   const today = useToday()
   const { availableDates, minDate, maxDate, nextMonday, bookingPeriods } = useAvailableDates()
   const {
@@ -49,7 +52,7 @@ function App() {
 
   const handleAddAppointment = async (formData: AppointmentFormData) => {
     const date = Array.isArray(selectedDate) ? selectedDate[0] : selectedDate
-    if (!date) return
+    if (!date || !user) return
 
     if (!isDateAvailable(date)) {
       alert('예약 가능한 날짜가 아닙니다. 예약 가능 기간을 확인해주세요.')
@@ -61,7 +64,9 @@ function App() {
         date: date,
         title: formData.title,
         time: formData.time,
-        description: formData.description
+        description: formData.description,
+        user_id: user.id,
+        user_name: profile?.name || user.email || '알 수 없음'
       })
       setShowForm(false)
     } catch {
@@ -74,6 +79,20 @@ function App() {
       await removeAppointment(id)
     } catch {
       alert('예약 삭제에 실패했습니다. 다시 시도해주세요.')
+    }
+  }
+
+  // 예약 삭제 가능 여부 확인 (관리자 또는 본인 예약)
+  const canDeleteAppointment = (appointmentUserId: string | null) => {
+    if (isAdmin) return true
+    return appointmentUserId === user?.id
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+    } catch {
+      alert('로그아웃에 실패했습니다.')
     }
   }
 
@@ -99,6 +118,28 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* 사용자 정보 헤더 */}
+      <div className="user-header">
+        <div className="user-info">
+          {profile?.avatar_url && (
+            <img
+              src={profile.avatar_url}
+              alt="프로필"
+              className="user-avatar"
+            />
+          )}
+          <span className="user-name">
+            {profile?.name || user?.email}
+          </span>
+          <AdminGuard>
+            <span className="admin-badge">관리자</span>
+          </AdminGuard>
+        </div>
+        <button onClick={handleSignOut} className="logout-button">
+          로그아웃
+        </button>
+      </div>
+
       <AppHeader
         error={error}
         loading={loading}
@@ -135,13 +176,13 @@ function App() {
 
             {selectedDateObj && isPastDate(selectedDateObj) && (
               <div className="info-message">
-                📅 과거 날짜입니다. 예약 현황만 확인할 수 있습니다.
+                과거 날짜입니다. 예약 현황만 확인할 수 있습니다.
               </div>
             )}
 
             {selectedDateObj && !isPastDate(selectedDateObj) && !isDateAvailable(selectedDateObj) && (
               <div className="warning-message">
-                ⚠️ 이 날짜는 예약 가능한 기간이 아닙니다.
+                이 날짜는 예약 가능한 기간이 아닙니다.
               </div>
             )}
 
@@ -165,10 +206,23 @@ function App() {
             appointments={dayAppointments}
             isPastDate={isPastDate}
             onDelete={handleDeleteAppointment}
+            canDelete={canDeleteAppointment}
+            currentUserId={user?.id}
+            isAdmin={isAdmin}
           />
         </div>
       </div>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AuthGuard>
+        <AppContent />
+      </AuthGuard>
+    </AuthProvider>
   )
 }
 

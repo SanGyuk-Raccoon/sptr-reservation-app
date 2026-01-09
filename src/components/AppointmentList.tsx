@@ -5,9 +5,19 @@ interface AppointmentListProps {
   appointments: Appointment[]
   isPastDate: (date: Date) => boolean
   onDelete: (id: string) => void
+  canDelete?: (userId: string | null) => boolean
+  currentUserId?: string
+  isAdmin?: boolean
 }
 
-export function AppointmentList({ appointments, isPastDate, onDelete }: AppointmentListProps) {
+export function AppointmentList({
+  appointments,
+  isPastDate,
+  onDelete,
+  canDelete,
+  currentUserId,
+  isAdmin = false
+}: AppointmentListProps) {
   const sortedAppointments = [...appointments].sort((a, b) =>
     a.time.localeCompare(b.time)
   )
@@ -19,14 +29,23 @@ export function AppointmentList({ appointments, isPastDate, onDelete }: Appointm
         <p className="no-appointments">예약된 일정이 없습니다.</p>
       ) : (
         <div className="appointments">
-          {sortedAppointments.map(apt => (
-            <AppointmentCard
-              key={apt.id}
-              appointment={apt}
-              isPast={isPastDate(apt.date)}
-              onDelete={onDelete}
-            />
-          ))}
+          {sortedAppointments.map(apt => {
+            const isPast = isPastDate(apt.date)
+            const isOwner = apt.user_id === currentUserId
+            const canDeleteThis = canDelete ? canDelete(apt.user_id) : isOwner || isAdmin
+
+            return (
+              <AppointmentCard
+                key={apt.id}
+                appointment={apt}
+                isPast={isPast}
+                onDelete={onDelete}
+                canDelete={canDeleteThis}
+                isOwner={isOwner}
+                isAdmin={isAdmin}
+              />
+            )
+          })}
         </div>
       )}
     </div>

@@ -4,7 +4,8 @@ import {
   createAppointment,
   deleteAppointment,
   subscribeToAppointments,
-  type Appointment
+  type Appointment,
+  type CreateAppointmentData
 } from '../lib/appointments'
 
 interface UseAppointmentsResult {
@@ -12,7 +13,7 @@ interface UseAppointmentsResult {
   loading: boolean
   error: string | null
   refresh: () => Promise<void>
-  addAppointment: (data: Omit<Appointment, 'id'>) => Promise<void>
+  addAppointment: (data: CreateAppointmentData) => Promise<void>
   removeAppointment: (id: string) => Promise<void>
   getAppointmentsForDate: (date: Date) => Appointment[]
 }
@@ -59,7 +60,7 @@ export function useAppointments(): UseAppointmentsResult {
     }
   }, [])
 
-  const addAppointment = useCallback(async (data: Omit<Appointment, 'id'>) => {
+  const addAppointment = useCallback(async (data: CreateAppointmentData) => {
     try {
       setError(null)
       await createAppointment(data)

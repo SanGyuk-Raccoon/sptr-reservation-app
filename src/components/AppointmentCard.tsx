@@ -4,20 +4,32 @@ interface AppointmentCardProps {
   appointment: Appointment
   isPast: boolean
   onDelete: (id: string) => void
+  canDelete: boolean
+  isOwner: boolean
+  isAdmin: boolean
 }
 
-export function AppointmentCard({ appointment, isPast, onDelete }: AppointmentCardProps) {
+export function AppointmentCard({
+  appointment,
+  isPast,
+  onDelete,
+  canDelete,
+  isOwner,
+  isAdmin
+}: AppointmentCardProps) {
   return (
-    <div className={`appointment-card ${isPast ? 'past-appointment' : ''}`}>
+    <div className={`appointment-card ${isPast ? 'past-appointment' : ''} ${isOwner ? 'own-appointment' : ''}`}>
       <div className="appointment-header">
         <span className="appointment-time">{appointment.time}</span>
-        {isPast && (
-          <span className="past-badge">과거</span>
-        )}
-        {!isPast && (
+        <div className="appointment-badges">
+          {isPast && <span className="past-badge">과거</span>}
+          {isOwner && !isPast && <span className="owner-badge">내 예약</span>}
+        </div>
+        {!isPast && canDelete && (
           <button
             onClick={() => onDelete(appointment.id)}
             className="delete-button"
+            title={isAdmin && !isOwner ? '관리자 권한으로 삭제' : '삭제'}
           >
             ✕
           </button>
@@ -26,6 +38,11 @@ export function AppointmentCard({ appointment, isPast, onDelete }: AppointmentCa
       <h4 className="appointment-title">{appointment.title}</h4>
       {appointment.description && (
         <p className="appointment-description">{appointment.description}</p>
+      )}
+      {appointment.user_name && (
+        <p className="appointment-user">
+          예약자: {appointment.user_name}
+        </p>
       )}
     </div>
   )

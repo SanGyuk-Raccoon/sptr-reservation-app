@@ -7,6 +7,17 @@ export interface Appointment {
   title: string
   time: string
   description: string
+  user_id: string | null
+  user_name: string | null
+}
+
+export interface CreateAppointmentData {
+  date: Date
+  title: string
+  time: string
+  description: string
+  user_id: string
+  user_name: string
 }
 
 // AppointmentRow를 Appointment로 변환
@@ -15,10 +26,12 @@ const rowToAppointment = (row: AppointmentRow): Appointment => ({
   date: new Date(row.date),
   title: row.title,
   time: row.time,
-  description: row.description || ''
+  description: row.description || '',
+  user_id: row.user_id,
+  user_name: row.user_name
 })
 
-// 모든 예약 가져오기
+// 모든 예약 가져오기 (RLS가 자동으로 권한 처리)
 export async function getAppointments(): Promise<Appointment[]> {
   try {
     const { data, error } = await supabase
@@ -39,8 +52,8 @@ export async function getAppointments(): Promise<Appointment[]> {
 // 특정 날짜의 예약 가져오기
 export async function getAppointmentsByDate(date: Date): Promise<Appointment[]> {
   try {
-    const dateStr = date.toISOString().split('T')[0] // YYYY-MM-DD 형식
-    
+    const dateStr = date.toISOString().split('T')[0]
+
     const { data, error } = await supabase
       .from('appointments')
       .select('*')
@@ -58,16 +71,18 @@ export async function getAppointmentsByDate(date: Date): Promise<Appointment[]> 
 }
 
 // 예약 추가
-export async function createAppointment(appointment: Omit<Appointment, 'id'>): Promise<Appointment> {
+export async function createAppointment(appointment: CreateAppointmentData): Promise<Appointment> {
   try {
     const { data, error } = await supabase
       .from('appointments')
       .insert([
         {
-          date: appointment.date.toISOString().split('T')[0], // YYYY-MM-DD 형식
+          date: appointment.date.toISOString().split('T')[0],
           title: appointment.title,
           time: appointment.time,
-          description: appointment.description || null
+          description: appointment.description || null,
+          user_id: appointment.user_id,
+          user_name: appointment.user_name
         }
       ])
       .select()
@@ -97,7 +112,7 @@ export async function deleteAppointment(id: string): Promise<void> {
   }
 }
 
-// 실시간 구독 (선택사항)
+// 실시간 구독
 export function subscribeToAppointments(
   callback: (appointments: Appointment[]) => void
 ) {
@@ -111,13 +126,12 @@ export function subscribeToAppointments(
         table: 'appointments'
       },
       async () => {
-        // 변경사항 발생 시 모든 예약 다시 가져오기
         const appointments = await getAppointments()
         callback(appointments)
       }
     )
     .subscribe()
-  
+
   return {
     unsubscribe: () => {
       supabase.removeChannel(channel)

@@ -17,6 +17,8 @@ export interface AppointmentRow {
   title: string
   time: string
   description: string | null
+  user_id: string | null
+  user_name: string | null
   created_at: string
   updated_at: string
 }
